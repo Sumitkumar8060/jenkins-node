@@ -1,0 +1,54 @@
+@Library("Shared") _
+pipeline{
+    
+    agent { label "vinod"}
+    stages{
+        stage("Hello"){
+            steps{
+                script{
+                    hello()
+                }
+            }
+        }
+        stage("Code"){
+            steps{
+                echo "The is code"
+                git url: "https://github.com/Sumitkumar8060/jenkins-node.git",branch:"main"
+                echo "code in cloned"
+            }
+        }
+        
+        stage("Build"){
+            steps{
+                echo "The is Build"
+                sh "docker build -t node-app:latest ."
+            }
+        }
+        stage("push to dockerhub"){
+            steps{
+                echo "this pushing the code to dockerhub"
+                withCredentials([usernamePassword(
+                    'credentialsId':"dockerhubcred",
+                    passwordVariable:"dockerHubPass",
+                    usernameVariable:"dockerHubUser")]){
+                sh "docker login -u ${env.dockerHubUser} -p ${env.dockerHubPass} "
+                sh "docker image tag node-app:latest ${env.dockerHubUser}/node-app:latest"
+                sh "docker push ${env.dockerHubUser}/node-app:latest"
+                    }
+            }
+        }
+        stage("Test"){
+            steps{
+                echo "The is Test"
+            }
+        }
+        
+        stage("Deploy"){
+            steps{
+                echo "The is Deploy"
+                sh "docker compose up -d"
+                
+            }
+        }
+    }
+}
